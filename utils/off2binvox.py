@@ -23,4 +23,4 @@ for c in CLASSES:
             if os.path.exists(binname):
                 print(binname, "exits, continue...")
                 continue
-            os.system(f'./binvox -d 32 -cb -pb {off}')
+            os.system(f'./binvox -d 32 -cb -e -pb {off}')
