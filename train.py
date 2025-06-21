@@ -42,7 +42,7 @@ def blue(x): return '\033[94m' + x + '\033[0m'
 # 参数解析
 parser = argparse.ArgumentParser()
 parser.add_argument('--data-root', type=str, default='/Data1/DL-project/VoxNet.pytorch/data/ModelNet10', help="dataset path")
-parser.add_argument('--batchSize', type=int, default=256, help='input batch size')
+parser.add_argument('--batchSize', type=int, default=64, help='input batch size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--n-epoch', type=int, default=30, help='number of epochs to train for')
 parser.add_argument('--outf', type=str, default='cls', help='output folder')
