@@ -14,6 +14,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from voxnet import EnhancedVoxNetAutoEncoder
+from u_net import VoxNetAE_UNet
 from data.modelnet10 import ModelNet10
 import numpy as np
 import torch.nn.functional as F
@@ -63,14 +64,15 @@ train_dataloader = DataLoader(train_dataset, batch_size=opt.batchSize, shuffle=T
 test_dataloader = DataLoader(test_dataset, batch_size=opt.batchSize, shuffle=False, num_workers=opt.workers)
 
 # Model initialization
-voxnet = EnhancedVoxNetAutoEncoder(z_dim=1024)
-print(voxnet)
+# model = EnhancedVoxNetAutoEncoder(z_dim=1024)
+model = VoxNetAE_UNet()
+print(model)
 
 if opt.model:
-    voxnet.load_state_dict(torch.load(opt.model))
+    model.load_state_dict(torch.load(opt.model))
 
-voxnet.cuda()
-optimizer = optim.Adam(voxnet.parameters(), lr=1e-4)
+model.cuda()
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
 loss_fn = torch.nn.BCELoss()
 num_batch = len(train_dataset) / opt.batchSize
 
@@ -136,7 +138,7 @@ no_improve_count = 0
 # Training loop
 for epoch in range(opt.n_epoch):
     epoch_train_loss = 0.0
-    voxnet.train()
+    model.train()
     for i, sample in enumerate(train_dataloader):
         voxel = sample['voxel'].float().cuda()
         voxel = rotate_voxels(voxel, torch.rand(voxel.shape[0]) * 360)
@@ -147,7 +149,7 @@ for epoch in range(opt.n_epoch):
         noised_voxel[((choices == 2) | (choices == 3))] = add_occlusion_noise(noised_voxel[((choices == 2) | (choices == 3))])
 
         optimizer.zero_grad()
-        pred = voxnet(noised_voxel)
+        pred = model(noised_voxel)
         loss = loss_fn(pred, voxel)
         loss.backward()
         optimizer.step()
@@ -161,7 +163,7 @@ for epoch in range(opt.n_epoch):
     train_losses.append(avg_train_loss)
 
     # Evaluate on test set
-    voxnet.eval()
+    model.eval()
     epoch_test_loss = 0.0
     with torch.no_grad():
         for sample in test_dataloader:
@@ -169,7 +171,7 @@ for epoch in range(opt.n_epoch):
             noised_voxel = voxel.detach().clone()
             noised_voxel = add_salt_pepper_noise(noised_voxel)
             noised_voxel = add_occlusion_noise(noised_voxel)
-            pred = voxnet(noised_voxel)
+            pred = model(noised_voxel)
             loss = loss_fn(pred, voxel)
             epoch_test_loss += loss.item()
 
@@ -178,7 +180,7 @@ for epoch in range(opt.n_epoch):
     print(f'Epoch {epoch}, Test Loss: {avg_test_loss:.6f}')
 
     # Save model
-    torch.save(voxnet.state_dict(), f'{opt.outf}/denoise_model_{epoch}.pth')
+    torch.save(model.state_dict(), f'{opt.outf}/{model.__class__.__name__}_{epoch}.pth')
 
     # Early stopping
     if avg_test_loss < best_test_loss:

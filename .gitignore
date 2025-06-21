@@ -116,7 +116,8 @@ dmypy.json
 
 # ignore softlink `data/ModelNet10`
 data/ModelNet10
-ModelNet10.zip
+*.binvox
+*.zip
 
 # ignore MACOSX
 __MACOSX/
